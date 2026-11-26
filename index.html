@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1014">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Ventilo Zwift</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE  : tableau de bord de la "pain cave", sombre, sportif, lisible en pédalant
+   IDEA   : un compteur de vélo — une grande jauge circulaire de vent, l'hélice qui tourne
+   PICTURE: jauge en arc + hélice animée au centre, barre de zone FC/watts en mode auto
+   COLOUR : fond nuit #0d1014, vent cyan #35c9ff, cardio #ff4f6d, puissance #ffb020
+   TYPE   : Barlow Condensed pour les chiffres, Barlow pour le texte
+   LAYOUT : une colonne téléphone, barre d'onglets en bas : Ventilo / Réglages */
+:root{--bg:#0d1014;--card:#161b22;--card2:#1e252e;--line:#2a323d;--txt:#eef2f6;--mut:#8b96a5;
+ --wind:#35c9ff;--hr:#ff4f6d;--pw:#ffb020;--ok:#2fd27a;--ko:#ff5a5a;
+ --num:'Barlow Condensed',system-ui,sans-serif;--safe-b:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;min-width:0;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--txt)}
+body{font:16px/1.45 Barlow,system-ui,-apple-system,Roboto,sans-serif;overflow-x:clip}
+main{max-width:480px;margin:0 auto;padding:max(14px,env(safe-area-inset-top)) 16px calc(96px + var(--safe-b))}
+button{font:inherit;font-weight:600;border:0;border-radius:14px;background:var(--card2);color:var(--txt);min-height:44px;padding:0 14px;cursor:pointer}
+button:active{filter:brightness(1.25)}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--wind);outline-offset:2px}
+button:disabled{opacity:.4}
+svg{display:block}
+
+/* barre du haut */
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px}
+.brand{font-family:var(--num);font-weight:600;font-size:20px;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand small{color:var(--mut);font-weight:500;font-size:15px;margin-left:6px}
+.pill{display:inline-flex;align-items:center;gap:8px;border-radius:99px;padding:0 16px;min-height:40px;font-size:15px}
+.pill.off{background:var(--wind);color:#00131d}
+.pill.on{background:var(--card);color:var(--mut)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--mut);flex:none;display:inline-block}
+.ok{background:var(--ok)}.ko{background:var(--ko)}.wait{background:var(--pw)}
+
+/* vues */
+.view{display:none}.view.show{display:block}
+
+/* jauge */
+.gauge{position:relative;width:min(100%,330px);aspect-ratio:1;margin:6px auto 0}
+.gauge>svg{position:absolute;inset:0;width:100%;height:100%}
+.trk{fill:none;stroke:var(--card2);stroke-width:16;stroke-linecap:round}
+.arc{fill:none;stroke:var(--wind);stroke-width:16;stroke-linecap:round;transition:stroke-dashoffset .5s ease,stroke .3s}
+.tick{stroke:var(--line);stroke-width:2}
+.fan{position:absolute;inset:23%;opacity:.13;color:var(--wind)}
+.fan svg{width:100%;height:100%}
+.spin{animation:rot 1s linear infinite;animation-play-state:paused;transform-origin:50% 50%}
+@keyframes rot{to{transform:rotate(360deg)}}
+.center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.big{font-family:var(--num);font-weight:700;font-size:clamp(84px,30vw,120px);line-height:.9;font-variant-numeric:tabular-nums}
+.big small{font-size:.36em;color:var(--mut);font-weight:600;margin-left:2px}
+.lbl{color:var(--mut);font-size:14px;margin-top:6px;max-width:70%}
+.cbig{margin-top:14px;background:var(--wind);color:#00131d;border-radius:99px;padding:0 26px;font-size:17px}
+
+/* modes */
+.modes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;background:var(--card);border-radius:18px;padding:5px;margin-top:4px}
+.modes button{background:transparent;color:var(--mut);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:62px;border-radius:13px;font-size:14px}
+.modes svg{width:22px;height:22px}
+.modes button.sel{background:var(--card2);color:var(--txt)}
+.modes button.sel[data-m="0"] svg{color:var(--wind)}
+.modes button.sel[data-m="1"] svg{color:var(--hr)}
+.modes button.sel[data-m="2"] svg{color:var(--pw)}
+
+/* manuel */
+.panel{background:var(--card);border-radius:18px;padding:16px;margin-top:12px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:52px;background:transparent;margin:0;touch-action:none}
+input[type=range]::-webkit-slider-runnable-track{height:14px;border-radius:7px;background:linear-gradient(90deg,var(--c,var(--wind)) var(--p,0%),var(--card2) var(--p,0%))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:40px;height:40px;border-radius:50%;background:#fff;margin-top:-13px;box-shadow:0 2px 10px #000a}
+input[type=range]::-moz-range-track{height:14px;border-radius:7px;background:var(--card2)}
+input[type=range]::-moz-range-progress{height:14px;border-radius:7px;background:var(--wind)}
+input[type=range]::-moz-range-thumb{width:40px;height:40px;border-radius:50%;background:#fff;border:0}
+.presets{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:8px}
+.presets button{font-family:var(--num);font-size:19px}
+.presets .stop{background:#34191d;color:#ff9aa6;font-family:inherit;font-size:16px}
+.hint{color:var(--mut);font-size:13px;margin:10px 0 0}
+
+/* zone auto */
+.zone .now{display:flex;align-items:baseline;gap:8px}
+.zone .now b{font-family:var(--num);font-size:54px;line-height:1;font-variant-numeric:tabular-nums}
+.zone .now span{color:var(--mut);font-size:16px}
+.zone.hrz .now b{color:var(--hr)}.zone.pwz .now b{color:var(--pw)}
+.bar{position:relative;height:12px;border-radius:6px;background:var(--card2);margin:16px 0 6px;overflow:visible}
+.bar i{position:absolute;inset:0 auto 0 0;border-radius:6px;transition:width .5s}
+.hrz .bar i{background:linear-gradient(90deg,#5b2230,var(--hr))}.pwz .bar i{background:linear-gradient(90deg,#5a4313,var(--pw))}
+.bar em{position:absolute;top:-6px;width:4px;height:24px;border-radius:2px;background:#fff;transform:translateX(-2px);transition:left .5s}
+.ends{display:flex;justify-content:space-between;font-size:13px;color:var(--mut);font-variant-numeric:tabular-nums}
+
+/* tuiles */
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.tile{background:var(--card);border-radius:16px;padding:10px 12px 12px}
+.tile span{font-size:12px;color:var(--mut);display:flex;align-items:center;gap:6px}
+.tile b{display:block;font-family:var(--num);font-size:28px;line-height:1.1;margin-top:4px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.tile b small{font-size:15px;color:var(--mut);font-weight:500}
+#tHr b{color:var(--hr)}#tPw b{color:var(--pw)}
+#tZc b{font-family:inherit;font-size:16px;padding-top:7px;display:flex;align-items:center;gap:7px}
+
+/* réglages */
+h2{font-family:var(--num);font-weight:600;font-size:22px;margin:22px 0 10px;letter-spacing:.01em}
+h2:first-of-type{margin-top:10px}
+.sec{background:var(--card);border-radius:18px;padding:14px 16px;margin-bottom:10px}
+.sec h3{margin:0 0 2px;font-size:16px;display:flex;align-items:center;gap:8px}
+.sec h3 svg{width:20px;height:20px}
+.sec p{margin:4px 0 0;color:var(--mut);font-size:14px}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.grow{flex:1 1 160px}
+.addr{font-size:13px;color:var(--mut);overflow-wrap:anywhere}
+.acts{display:flex;gap:8px}
+.list{display:grid;gap:6px;margin-top:10px}
+.list button{display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;font-weight:500;padding:10px 12px}
+.list .rssi{color:var(--mut);white-space:nowrap;font-size:14px}
+.list .msg{font-size:14px;color:var(--mut);padding:2px}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px 12px;margin-top:12px}
+label{font-size:13px;color:var(--mut);display:block}
+.num{display:flex;align-items:center;margin-top:4px;background:var(--bg);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.num button{min-height:44px;width:40px;padding:0;border-radius:0;background:transparent;color:var(--mut);font-size:20px;flex:none}
+.num input{width:100%;min-width:0;text-align:center;font:600 20px var(--num);color:var(--txt);background:transparent;border:0;padding:8px 0;-moz-appearance:textfield}
+.num input::-webkit-outer-spin-button,.num input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.full{grid-column:1/-1}
+.ftp{display:flex;gap:8px;align-items:end;margin-top:12px}
+.ftp>div{flex:1}
+.mval{font-family:var(--num);font-size:26px;font-weight:700;color:var(--wind)}
+.danger{background:#34191d;color:#ff9aa6}
+.ghost{background:transparent;border:1px solid var(--line)}
+.savebar{position:fixed;left:0;right:0;bottom:calc(72px + var(--safe-b));display:none;justify-content:center;padding:0 16px;pointer-events:none}
+.savebar.show{display:flex}
+.savebar button{pointer-events:auto;width:100%;max-width:448px;background:var(--wind);color:#00131d;box-shadow:0 8px 24px #000b;min-height:50px;font-size:17px}
+
+/* onglets */
+nav{position:fixed;left:0;right:0;bottom:0;background:#0d1014ee;backdrop-filter:blur(10px);border-top:1px solid var(--line);padding-bottom:var(--safe-b)}
+nav div{max-width:480px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr}
+nav a{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 0 10px;color:var(--mut);text-decoration:none;font-size:13px;font-weight:600}
+nav a svg{width:24px;height:24px}
+nav a.sel{color:var(--wind)}
+#nobt{display:none;background:#34191d;color:#ffc0c8;border-radius:14px;padding:12px 14px;margin-top:10px;font-size:14px}
+#toast{position:fixed;left:50%;bottom:calc(140px + var(--safe-b));transform:translateX(-50%);background:#000d;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center;z-index:9}
+#toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}.arc,.bar i,.bar em,#toast{transition:none}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-hand" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M4 7h10M4 17h6M18 7h2M14 17h6"/><circle cx="16" cy="7" r="2.2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="17" r="2.2" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path fill="currentColor" d="M12 21s-7.5-4.6-9.4-9.3C1.4 8.6 3.3 5 6.8 5c2 0 3.4 1.1 4.2 2.4h2C13.8 6.1 15.2 5 17.2 5c3.5 0 5.4 3.6 4.2 6.7C19.5 16.4 12 21 12 21z"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path fill="currentColor" d="M13.5 2 4 13.6h6.2L9.3 22 20 9.9h-6.4z"/></symbol>
+  <symbol id="i-fan" viewBox="0 0 24 24"><g fill="currentColor"><circle cx="12" cy="12" r="2.3"/><path d="M12 9.6c-.4-3 .5-6.4 3.2-6.6 2.4-.2 3.2 2.7 1.2 4.4-1.2 1-2.8 1.6-4.4 2.2zM14.1 13.2c2.8-1.2 6.3-1 7.2 1.6.8 2.3-2 3.9-4.1 2.4-1.3-.9-2.3-2.4-3.1-4zM9.9 13.2c-1.8 2.4-4.7 4.4-6.9 2.9-2-1.4-.5-4 2-3.8 1.6.1 3.2.5 4.9.9z"/></g></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.5 7.5 0 0 0-1.7-1L15 3.5h-4L10.7 6a7.5 7.5 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.5 7.5 0 0 0 1.7 1l.3 2.5h4l.3-2.5a7.5 7.5 0 0 0 1.7-1l2.4 1 2-3.4zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></symbol>
+  <symbol id="i-plug" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0zM12 17v4"/></symbol>
+</svg>
+
+<main>
+<div class="top">
+  <div class="brand" id="brand">Ventilo Zwift</div>
+  <button class="pill off" id="cbtn"><span class="dot"></span><span id="ctxt">Connecter</span></button>
+</div>
+<div id="nobt">Ce navigateur ne gère pas le Bluetooth. Ouvre cette page dans <b>Chrome</b> sur Android.</div>
+
+<!-- ======================= PAGE VENTILO ======================= -->
+<section class="view show" id="vMain">
+  <div class="gauge">
+    <svg viewBox="0 0 200 200" aria-hidden="true">
+      <g id="ticks"></g>
+      <path class="trk" d="M43.4 156.6A80 80 0 1 1 156.6 156.6"/>
+      <path class="arc" id="arc" d="M43.4 156.6A80 80 0 1 1 156.6 156.6"/>
+    </svg>
+    <div class="fan"><svg viewBox="0 0 24 24" class="spin" id="fan"><use href="#i-fan"/></svg></div>
+    <div class="center">
+      <div class="big" id="bigv"><span id="v">0</span><small>%</small></div>
+      <div class="lbl" id="lbl">Appuie sur Connecter</div>
+      <button class="cbig" id="cbig">Connecter le ventilo</button>
+    </div>
+  </div>
+
+  <div class="modes" id="modes">
+    <button data-m="0"><svg><use href="#i-hand"/></svg>Manuel</button>
+    <button data-m="1"><svg><use href="#i-heart"/></svg>Cardio</button>
+    <button data-m="2"><svg><use href="#i-bolt"/></svg>Puissance</button>
+  </div>
+
+  <div class="panel" id="pManual">
+    <input type="range" id="sl" min="0" max="100" value="0" aria-label="Vitesse du ventilateur">
+    <div class="presets">
+      <button class="stop" data-v="0">Arrêt</button><button data-v="30">30</button><button data-v="60">60</button><button data-v="100">100</button>
+    </div>
+  </div>
+
+  <div class="panel zone" id="pAuto" hidden>
+    <div class="now"><b id="zNow">—</b><span id="zUnit">bpm</span><span id="zTxt" style="margin-left:auto"></span></div>
+    <div class="bar"><i id="zFill"></i><em id="zMark"></em></div>
+    <div class="ends"><span id="zLo">--</span><span id="zHi">--</span></div>
+    <p class="hint">Le ventilo suit ton effort : il monte vite et redescend lentement. Touche « Manuel » pour reprendre la main.</p>
+  </div>
+
+  <div class="tiles">
+    <div class="tile" id="tHr"><span><span class="dot" id="d0"></span>Cardio</span><b id="hr">—</b></div>
+    <div class="tile" id="tPw"><span><span class="dot" id="d1"></span>Puissance</span><b id="pw">—</b></div>
+    <div class="tile" id="tZc"><span>Secteur</span><b id="zc">—</b></div>
+  </div>
+</section>
+
+<!-- ======================= PAGE RÉGLAGES ======================= -->
+<section class="view" id="vSet">
+  <h2>Capteurs</h2>
+  <div class="sec">
+    <div class="row">
+      <div class="grow"><h3><svg style="color:var(--hr)"><use href="#i-heart"/></svg>Ceinture cardio <span class="dot" id="sd0"></span></h3><div class="addr" id="n0">Aucune</div></div>
+      <div class="acts"><button data-scan="0">Rechercher</button><button class="ghost" data-forget="0" aria-label="Oublier la ceinture">Oublier</button></div>
+    </div>
+    <div class="list" id="l0"></div>
+  </div>
+  <div class="sec">
+    <div class="row">
+      <div class="grow"><h3><svg style="color:var(--pw)"><use href="#i-bolt"/></svg>Home trainer <span class="dot" id="sd1"></span></h3><div class="addr" id="n1">Aucun</div></div>
+      <div class="acts"><button data-scan="1">Rechercher</button><button class="ghost" data-forget="1" aria-label="Oublier le home trainer">Oublier</button></div>
+    </div>
+    <div class="list" id="l1"></div>
+  </div>
+  <p class="hint" style="margin:0 4px">Le capteur doit accepter deux connexions (Zwift + ventilo). S'il n'apparaît pas, ferme Zwift le temps de l'associer.</p>
+
+  <h2>Régulation cardio</h2>
+  <div class="sec">
+    <div class="grid2">
+      <div><label for="hrLo">Bas de plage (bpm)</label><div class="num"><button data-step="hrLo:-5">−</button><input type="number" id="hrLo" inputmode="numeric"><button data-step="hrLo:5">+</button></div></div>
+      <div><label for="hrHi">100 % à (bpm)</label><div class="num"><button data-step="hrHi:-5">−</button><input type="number" id="hrHi" inputmode="numeric"><button data-step="hrHi:5">+</button></div></div>
+    </div>
+    <p>Repère : bas de plage ≈ FC d'endurance tranquille, 100 % ≈ FC au seuil.</p>
+  </div>
+
+  <h2>Régulation puissance</h2>
+  <div class="sec">
+    <div class="grid2">
+      <div><label for="pLo">Bas de plage (W)</label><div class="num"><button data-step="pLo:-10">−</button><input type="number" id="pLo" inputmode="numeric"><button data-step="pLo:10">+</button></div></div>
+      <div><label for="pHi">100 % à (W)</label><div class="num"><button data-step="pHi:-10">−</button><input type="number" id="pHi" inputmode="numeric"><button data-step="pHi:10">+</button></div></div>
+    </div>
+    <div class="ftp">
+      <div><label for="ftp">Ta FTP (W)</label><div class="num"><input type="number" id="ftp" inputmode="numeric" placeholder="230"></div></div>
+      <button id="fromftp">55 → 105 % FTP</button>
+    </div>
+    <div class="grid2">
+      <div class="full"><label for="avgSec">Lissage de la puissance (s)</label><div class="num"><button data-step="avgSec:-1">−</button><input type="number" id="avgSec" inputmode="numeric"><button data-step="avgSec:1">+</button></div></div>
+    </div>
+  </div>
+
+  <h2>Comportement</h2>
+  <div class="sec">
+    <div class="grid2">
+      <div class="full"><label for="lowPct">Vitesse en bas de plage (%) — 0 = arrêt sous la plage</label><div class="num"><button data-step="lowPct:-5">−</button><input type="number" id="lowPct" inputmode="numeric"><button data-step="lowPct:5">+</button></div></div>
+    </div>
+  </div>
+
+  <h2>Moteur</h2>
+  <div class="sec">
+    <div class="row"><div class="grow"><h3>Minimum moteur</h3></div><div class="mval"><span id="mv">--</span> %</div></div>
+    <input type="range" id="mn" min="0" max="80" value="35" aria-label="Minimum moteur" style="--c:var(--wind)">
+    <p>En manuel, mets la vitesse sur 1 %, puis monte ce réglage jusqu'à ce que le ventilo tourne franchement sans ronfler. Envoyé au relâchement.</p>
+  </div>
+
+  <h2>Boîtier</h2>
+  <div class="sec">
+    <div class="row"><div class="grow"><h3><svg><use href="#i-plug"/></svg><span id="devName">Non connecté</span></h3><p id="devInfo">—</p></div>
+    <button class="danger" id="disc">Déconnecter</button></div>
+  </div>
+</section>
+
+<div class="savebar" id="savebar"><button id="savecfg">Enregistrer les réglages</button></div>
+<div id="toast" role="status"></div>
+</main>
+
+<nav><div>
+  <a href="#" id="tabMain" class="sel"><svg><use href="#i-fan"/></svg>Ventilo</a>
+  <a href="#reglages" id="tabSet"><svg><use href="#i-gear"/></svg>Réglages</a>
+</div></nav>
+
+<script>
+{
+const SVC='8f1d0001-7c3b-4e5a-9a2b-5f6e7a8b9c0d';
+const U=n=>`8f1d000${n}-7c3b-4e5a-9a2b-5f6e7a8b9c0d`;
+const $=id=>document.getElementById(id);
+const sl=$('sl'),mn=$('mn'),arc=$('arc');
+let dev=null,chState=null,chCmd=null,chCfg=null,chScan=null;
+let st=null,lastDv=null,cfg=null,drag=false,mdrag=false,wantConn=false,scanSlot=-1,cfgDirty=false;
+const found=[{},{}];
+const CFG_KEYS=['hrLo','hrHi','pLo','pHi','lowPct','avgSec'];
+const LIM={hrLo:[40,220],hrHi:[45,230],pLo:[0,1500],pHi:[10,2000],lowPct:[0,100],avgSec:[1,30]};
+
+/* ---------- jauge ---------- */
+const ARC_LEN=arc.getTotalLength();
+arc.style.strokeDasharray=ARC_LEN;arc.style.strokeDashoffset=ARC_LEN;
+(()=>{let t='';for(let i=0;i<=10;i++){const a=(135+i*27)*Math.PI/180,r1=92,r2=i%5?96:99;
+  t+=`<line class="tick" x1="${100+r1*Math.cos(a)}" y1="${100+r1*Math.sin(a)}" x2="${100+r2*Math.cos(a)}" y2="${100+r2*Math.sin(a)}"/>`}$('ticks').innerHTML=t})();
+function setGauge(p,mode){
+  arc.style.strokeDashoffset=ARC_LEN*(1-p/100);arc.style.opacity=p>0?1:0;
+  arc.style.stroke=mode===1?'var(--hr)':mode===2?'var(--pw)':'var(--wind)';
+}
+function setFan(out){const f=$('fan');
+  if(!out){f.style.animationPlayState='paused';return}
+  f.style.animationDuration=(1.8-1.5*out/100).toFixed(2)+'s';f.style.animationPlayState='running'}
+
+/* ---------- utilitaires ---------- */
+let names={};
+try{names=JSON.parse(localStorage.getItem('ventiloNames')||'{}')}catch(e){}
+function saveNames(){try{localStorage.setItem('ventiloNames',JSON.stringify(names))}catch(e){}}
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('show'),2600)}
+const hex=b=>b.toString(16).padStart(2,'0').toUpperCase();
+const addrStr=a=>Array.from(a).reverse().map(hex).join(':');
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+
+/* ---------- navigation ---------- */
+function route(){const set=location.hash==='#reglages';
+  $('vMain').classList.toggle('show',!set);$('vSet').classList.toggle('show',set);
+  $('tabMain').classList.toggle('sel',!set);$('tabSet').classList.toggle('sel',set);
+  $('savebar').classList.toggle('show',set&&cfgDirty);window.scrollTo(0,0)}
+addEventListener('hashchange',route);
+
+/* ---------- file GATT ---------- */
+let chain=Promise.resolve();
+function gatt(fn){const p=chain.then(fn);chain=p.catch(()=>{});return p}
+function send(bytes){if(!chCmd)return Promise.resolve();return gatt(()=>chCmd.writeValueWithResponse(new Uint8Array(bytes))).catch(e=>console.warn(e))}
+let pendingManual=null,manualBusy=false;
+function sendManual(v){pendingManual=v;if(manualBusy)return;manualBusy=true;
+  (async()=>{while(pendingManual!==null){const x=pendingManual;pendingManual=null;await send([1,x]);await new Promise(r=>setTimeout(r,120))}manualBusy=false})()}
+
+/* ---------- connexion ---------- */
+function setConn(state){
+  const b=$('cbtn'),on=state==='on';
+  b.className='pill '+(on?'on':'off');
+  b.querySelector('.dot').className='dot '+(on?'ok':state==='wait'?'wait':'');
+  $('ctxt').textContent=on?'Connecté':state==='wait'?'Connexion…':'Connecter';
+  $('cbig').hidden=on||state==='wait';
+  $('bigv').hidden=!on;
+  if(!on){setGauge(0,0);setFan(0)}
+}
+async function connect(){
+  if(!navigator.bluetooth){$('nobt').style.display='block';return}
+  try{
+    if(!dev){dev=await navigator.bluetooth.requestDevice({filters:[{services:[SVC]}]});dev.addEventListener('gattserverdisconnected',onDisc)}
+    wantConn=true;setConn('wait');$('lbl').textContent='Connexion…';
+    const srv=await dev.gatt.connect(),svc=await srv.getPrimaryService(SVC);
+    chState=await svc.getCharacteristic(U(2));chCmd=await svc.getCharacteristic(U(3));
+    chCfg=await svc.getCharacteristic(U(4));chScan=await svc.getCharacteristic(U(5));
+    chState.addEventListener('characteristicvaluechanged',e=>showState(e.target.value));
+    chScan.addEventListener('characteristicvaluechanged',e=>onScan(e.target.value));
+    await chState.startNotifications();await chScan.startNotifications();
+    setConn('on');
+    const nm=dev.name||'Ventilo';$('brand').innerHTML='';
+    const parts=nm.match(/^(.*?)-([0-9A-F]{4})$/);
+    $('brand').append(parts?parts[1].replace(/-/g,' '):nm);
+    if(parts){const s=document.createElement('small');s.textContent=parts[2];$('brand').append(s)}
+    $('devName').textContent=nm;
+    showState(await gatt(()=>chState.readValue()));
+    await readCfg();
+  }catch(e){
+    console.warn(e);
+    if(e.name==='NotFoundError'){setConn('off');$('lbl').textContent='Aucun ventilo choisi';return}
+    setConn('off');$('lbl').textContent='Échec de connexion';
+    if(wantConn)setTimeout(connect,2500);
+  }
+}
+function onDisc(){chState=chCmd=chCfg=chScan=null;setConn(wantConn?'wait':'off');$('lbl').textContent=wantConn?'Connexion perdue, reconnexion…':'Déconnecté';if(wantConn)setTimeout(connect,1500)}
+$('cbtn').onclick=$('cbig').onclick=()=>{if(dev&&dev.gatt.connected)location.hash='#reglages';else connect()};
+$('disc').onclick=()=>{if(dev&&dev.gatt.connected){wantConn=false;dev.gatt.disconnect()}};
+
+/* ---------- état (12 octets) ---------- */
+function showState(dv){
+  lastDv=dv;
+  const s={mode:dv.getUint8(0),ui:dv.getUint8(1),out:dv.getUint8(2),man:dv.getUint8(3),f:dv.getUint8(4),g:dv.getUint8(5),
+    hr:dv.getUint8(6),pi:dv.getUint16(7,true),pa:dv.getUint16(9,true),min:dv.getUint8(11)};
+  s.zc=!!(s.f&1);s.kick=!!(s.f&2);s.c0=!!(s.f&4);s.c1=!!(s.f&8);s.scan=!!(s.f&16);s.f0=!!(s.f&32);s.f1=!!(s.f&64);
+  s.has0=!!(s.g&1);s.has1=!!(s.g&2);s.ftms=!!(s.g&4);
+  st=s;
+  $('v').textContent=s.ui;setGauge(s.ui,s.mode);setFan(s.out);
+  document.querySelectorAll('#modes button').forEach(b=>b.classList.toggle('sel',+b.dataset.m===s.mode));
+  $('pManual').hidden=s.mode!==0;$('pAuto').hidden=s.mode===0;
+  if(!drag){sl.value=s.ui;sl.style.setProperty('--p',s.ui+'%')}
+  let lbl;
+  if(s.kick)lbl='Démarrage…';
+  else if(s.mode===0)lbl=s.ui>0?'Manuel':'Arrêté';
+  else if(s.mode===1)lbl=s.f0?'Suit ta FC':(s.has0?'En attente de la ceinture':'Aucune ceinture associée');
+  else lbl=s.f1?'Suit ta puissance':(s.has1?'En attente du home trainer':'Aucun home trainer associé');
+  $('lbl').textContent=lbl;
+  if(s.mode){
+    const hrM=s.mode===1,val=hrM?(s.f0?s.hr:null):(s.f1?s.pa:null);
+    const lo=cfg?(hrM?cfg.hrLo:cfg.pLo):0,hi=cfg?(hrM?cfg.hrHi:cfg.pHi):1;
+    $('pAuto').className='panel zone '+(hrM?'hrz':'pwz');
+    $('zNow').textContent=val===null?'—':val;$('zUnit').textContent=hrM?'bpm':'W moy.';
+    $('zTxt').textContent='→ '+s.ui+' %';
+    $('zLo').textContent=lo+(hrM?' bpm':' W');$('zHi').textContent=hi+(hrM?' bpm':' W');
+    const k=val===null?0:clamp((val-lo)/(hi-lo),0,1)*100;
+    $('zFill').style.width=k+'%';$('zMark').style.left=k+'%';$('zMark').style.opacity=val===null?0:1;
+  }
+  $('hr').innerHTML=s.f0?s.hr+'<small> bpm</small>':'—';
+  $('pw').innerHTML=s.f1?s.pa+'<small> W</small>':'—';
+  $('zc').innerHTML=s.zc?'<span class="dot ok"></span>OK':(s.out>0?'<span class="dot ko"></span>Absent':'<span class="dot"></span>—');
+  for(const i of [0,1]){const f=i?s.f1:s.f0,c=i?s.c1:s.c0,h=i?s.has1:s.has0;
+    const cl='dot '+(f?'ok':(c?'wait':(h?'ko':'')));$('d'+i).className=cl;$('sd'+i).className=cl}
+  $('devInfo').textContent=`Sortie gradateur ${s.out} % · minimum moteur ${s.min} %`+(s.has1?` · trainer ${s.ftms?'FTMS':'Cycling Power'}`:'');
+  if(!s.scan&&scanSlot>=0)finishScan();
+  if(!mdrag){mn.value=s.min;mn.style.setProperty('--p',s.min/80*100+'%');$('mv').textContent=s.min}
+}
+
+/* ---------- réglages (23 octets lus, 9 écrits) ---------- */
+async function readCfg(){
+  const dv=await gatt(()=>chCfg.readValue());
+  cfg={hrLo:dv.getUint8(1),hrHi:dv.getUint8(2),pLo:dv.getUint16(3,true),pHi:dv.getUint16(5,true),lowPct:dv.getUint8(7),avgSec:dv.getUint8(8),
+    s:[{t:dv.getUint8(9),a:new Uint8Array(dv.buffer.slice(dv.byteOffset+10,dv.byteOffset+16))},{t:dv.getUint8(16),a:new Uint8Array(dv.buffer.slice(dv.byteOffset+17,dv.byteOffset+23))}]};
+  if(!cfgDirty)for(const k of CFG_KEYS)$(k).value=cfg[k];
+  for(const i of [0,1]){const x=cfg.s[i];
+    if(x.t===255)$('n'+i).textContent=i?'Aucun home trainer associé':'Aucune ceinture associée';
+    else{const a=addrStr(x.a);$('n'+i).textContent=(names[a]?names[a]+' · ':'')+a}}
+  if(lastDv)showState(lastDv);
+}
+function markDirty(){cfgDirty=true;route()}
+CFG_KEYS.forEach(k=>$(k).addEventListener('input',markDirty));
+document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>{const[k,d]=b.dataset.step.split(':');const e=$(k);
+  e.value=clamp((+e.value||0)+ +d,LIM[k][0],LIM[k][1]);markDirty()});
+$('fromftp').onclick=()=>{const f=+$('ftp').value;if(!(f>=50)){toast('Entre ta FTP');return}
+  $('pLo').value=Math.round(f*.55);$('pHi').value=Math.round(f*1.05);markDirty()};
+$('savecfg').onclick=async()=>{
+  if(!chCfg){toast('Ventilo non connecté');return}
+  const n=k=>clamp(Math.round(+$(k).value||0),LIM[k][0],LIM[k][1]);
+  const hrLo=n('hrLo'),hrHi=Math.max(n('hrHi'),hrLo+5),pLo=n('pLo'),pHi=Math.max(n('pHi'),pLo+10);
+  const b=[1,hrLo,hrHi,pLo&255,pLo>>8,pHi&255,pHi>>8,n('lowPct'),n('avgSec')];
+  try{await gatt(()=>chCfg.writeValueWithResponse(new Uint8Array(b)));cfgDirty=false;await readCfg();route();toast('Réglages enregistrés dans le ventilo')}
+  catch(e){toast('Échec de l\'envoi')}
+};
+
+/* ---------- recherche de capteurs ---------- */
+const KIND=['','cardio','puissance','cardio + puissance','FTMS','cardio + FTMS','puissance + FTMS','cardio + puissance + FTMS'];
+function msg(i,t){const l=$('l'+i);l.textContent='';const m=document.createElement('div');m.className='msg';m.textContent=t;l.appendChild(m)}
+function renderList(i){
+  const items=Object.values(found[i]).sort((a,b)=>b.rssi-a.rssi);
+  msg(i,items.length?'Touche ton capteur pour l\'associer :':'Recherche (10 s)… réveille le capteur : ceinture humidifiée et portée, ou 2 tours de pédale.');
+  for(const it of items){const b=document.createElement('button');
+    const l=document.createElement('span');l.textContent=(it.name||'Sans nom')+' · '+KIND[it.kind];
+    const r=document.createElement('span');r.className='rssi';r.textContent=it.rssi+' dBm';
+    b.append(l,r);b.onclick=()=>pick(i,it);$('l'+i).appendChild(b)}
+}
+function onScan(dv){
+  if(scanSlot<0)return;
+  const kind=dv.getUint8(0),rssi=dv.getInt8(1),type=dv.getUint8(2),a=new Uint8Array(dv.buffer.slice(dv.byteOffset+3,dv.byteOffset+9));
+  if(!(scanSlot===0?(kind&1):(kind&6)))return;
+  const name=new TextDecoder().decode(new Uint8Array(dv.buffer.slice(dv.byteOffset+9,dv.byteOffset+dv.byteLength)));
+  const key=addrStr(a);found[scanSlot][key]={kind,rssi,type,a,name,key};renderList(scanSlot);
+}
+document.querySelectorAll('[data-scan]').forEach(b=>b.onclick=async()=>{
+  if(!chCmd){toast('Connecte d\'abord le ventilo');return}
+  const i=+b.dataset.scan;if(scanSlot>=0&&scanSlot!==i)$('l'+scanSlot).textContent='';
+  scanSlot=i;found[i]={};renderList(i);await send([0x10,i]);
+});
+function finishScan(){const i=scanSlot;scanSlot=-1;if(i<0)return;
+  if(!Object.keys(found[i]).length)msg(i,'Rien trouvé. Capteur réveillé ? Déjà utilisé par une autre appli ?');}
+async function pick(i,it){
+  if(it.name){names[it.key]=it.name;saveNames()}
+  scanSlot=-1;$('l'+i).textContent='';
+  await send([0x20,i,it.type,...it.a]);await readCfg();
+  toast(i?'Home trainer associé, connexion en cours':'Ceinture associée, connexion en cours');
+}
+document.querySelectorAll('[data-forget]').forEach(b=>b.onclick=async()=>{
+  if(!chCmd)return;const i=+b.dataset.forget;await send([0x21,i]);await readCfg();toast('Capteur oublié')});
+
+/* ---------- page ventilo ---------- */
+document.querySelectorAll('#modes button').forEach(b=>b.onclick=()=>{
+  if(!chCmd){toast('Connecte d\'abord le ventilo');return}
+  const m=+b.dataset.m;send([2,m]);
+  if(m===1&&st&&!st.has0)toast('Associe ta ceinture dans Réglages');
+  if(m===2&&st&&!st.has1)toast('Associe ton home trainer dans Réglages');
+});
+sl.addEventListener('input',()=>{const v=+sl.value;$('v').textContent=v;setGauge(v,0);sl.style.setProperty('--p',v+'%');sendManual(v)});
+['pointerdown','touchstart'].forEach(e=>sl.addEventListener(e,()=>{drag=true},{passive:true}));
+['pointerup','touchend','pointercancel'].forEach(e=>sl.addEventListener(e,()=>setTimeout(()=>{drag=false},500),{passive:true}));
+document.querySelectorAll('.presets button').forEach(b=>b.onclick=()=>{const v=+b.dataset.v;sl.value=v;sl.style.setProperty('--p',v+'%');$('v').textContent=v;setGauge(v,0);sendManual(v)});
+mn.addEventListener('input',()=>{mdrag=true;$('mv').textContent=mn.value;mn.style.setProperty('--p',mn.value/80*100+'%')});
+mn.addEventListener('change',()=>{send([3,+mn.value]);setTimeout(()=>{mdrag=false},800)});
+
+if(!navigator.bluetooth)$('nobt').style.display='block';
+setConn('off');route();
+}
+</script>
+</body>
+</html>
