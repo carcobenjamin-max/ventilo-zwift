@@ -6,7 +6,7 @@ Boîtier qui pilote un ventilateur 230 V depuis un téléphone Android, en manue
 - **Programme de la carte** : `firmware/ventilo_ble/ventilo_ble.ino`
 - **Mode d'emploi pour l'utilisateur** : [NOTICE.md](NOTICE.md)
 
-Le même programme et la même appli servent pour tous les boîtiers. Chaque boîtier s'annonce sous un nom unique `Ventilo-Zwift-XXXX` (XXXX tiré de la puce).
+Jusqu'à 4 profils par boîtier (nom, ceinture, plages FC/puissance) ; le profil se choisit tout seul selon la ceinture détectée. Le même programme et la même appli servent pour tous les boîtiers. Chaque boîtier s'annonce sous un nom unique `Ventilo-Zwift-XXXX` (XXXX tiré de la puce).
 
 ---
 

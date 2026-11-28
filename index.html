@@ -127,9 +127,29 @@ label{font-size:13px;color:var(--mut);display:block}
 .mval{font-family:var(--num);font-size:26px;font-weight:700;color:var(--wind)}
 .danger{background:#34191d;color:#ff9aa6}
 .ghost{background:transparent;border:1px solid var(--line)}
-.savebar{position:fixed;left:0;right:0;bottom:calc(72px + var(--safe-b));display:none;justify-content:center;padding:0 16px;pointer-events:none}
-.savebar.show{display:flex}
-.savebar button{pointer-events:auto;width:100%;max-width:448px;background:var(--wind);color:#00131d;box-shadow:0 8px 24px #000b;min-height:50px;font-size:17px}
+/* profils */
+.who{display:flex;align-items:center;gap:8px;margin:6px auto 0;background:var(--card);border-radius:99px;padding:0 16px 0 12px;min-height:40px;font-size:15px}
+.who svg{width:18px;height:18px;color:var(--mut)}
+.who em{font-style:normal;font-size:12px;color:var(--hr);background:#3a1a22;border-radius:99px;padding:2px 8px}
+.who em:empty{display:none}
+.sheet{position:fixed;inset:0;background:#000a;display:flex;align-items:flex-end;justify-content:center;z-index:8}
+.sheet[hidden]{display:none}
+.sbox{width:100%;max-width:480px;background:var(--card);border-radius:22px 22px 0 0;padding:18px 16px calc(18px + var(--safe-b))}
+.sbox h3{font-family:var(--num);font-size:22px;margin:0 0 12px}
+.plist{display:grid;gap:8px}
+.plist button{display:flex;align-items:center;gap:10px;justify-content:flex-start;min-height:54px;font-size:17px;text-align:left}
+.plist button.sel{outline:2px solid var(--wind)}
+.plist small{margin-left:auto;color:var(--mut);font-weight:500;font-size:13px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{border-radius:99px;min-height:40px}
+.chips button.sel{background:var(--wind);color:#00131d}
+.chips .add{background:transparent;border:1px dashed var(--line);color:var(--mut)}
+.txt{width:100%;font:inherit;font-size:17px;color:var(--txt);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:4px}
+.prow{display:flex;gap:8px;align-items:end;margin-top:12px}.prow>div{flex:1}
+#savest{display:flex;align-items:center;gap:8px}
+#offnote{display:none;color:#ffd38a;background:#2b2412}
+#vSet.dis #offnote{display:block}
+#vSet.dis .need{opacity:.35;pointer-events:none}
 
 /* onglets */
 nav{position:fixed;left:0;right:0;bottom:0;background:#0d1014ee;backdrop-filter:blur(10px);border-top:1px solid var(--line);padding-bottom:var(--safe-b)}
@@ -150,6 +170,7 @@ nav a.sel{color:var(--wind)}
   <symbol id="i-bolt" viewBox="0 0 24 24"><path fill="currentColor" d="M13.5 2 4 13.6h6.2L9.3 22 20 9.9h-6.4z"/></symbol>
   <symbol id="i-fan" viewBox="0 0 24 24"><g fill="currentColor"><circle cx="12" cy="12" r="2.3"/><path d="M12 9.6c-.4-3 .5-6.4 3.2-6.6 2.4-.2 3.2 2.7 1.2 4.4-1.2 1-2.8 1.6-4.4 2.2zM14.1 13.2c2.8-1.2 6.3-1 7.2 1.6.8 2.3-2 3.9-4.1 2.4-1.3-.9-2.3-2.4-3.1-4zM9.9 13.2c-1.8 2.4-4.7 4.4-6.9 2.9-2-1.4-.5-4 2-3.8 1.6.1 3.2.5 4.9.9z"/></g></symbol>
   <symbol id="i-gear" viewBox="0 0 24 24"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.5 7.5 0 0 0-1.7-1L15 3.5h-4L10.7 6a7.5 7.5 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.5 7.5 0 0 0 1.7 1l.3 2.5h4l.3-2.5a7.5 7.5 0 0 0 1.7-1l2.4 1 2-3.4zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><g fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7z"/></g></symbol>
   <symbol id="i-plug" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0zM12 17v4"/></symbol>
 </svg>
 
@@ -162,6 +183,7 @@ nav a.sel{color:var(--wind)}
 
 <!-- ======================= PAGE VENTILO ======================= -->
 <section class="view show" id="vMain">
+  <button class="who" id="who" hidden><svg><use href="#i-user"/></svg><span id="whoName">—</span><em id="whoTag"></em></button>
   <div class="gauge">
     <svg viewBox="0 0 200 200" aria-hidden="true">
       <g id="ticks"></g>
@@ -205,17 +227,28 @@ nav a.sel{color:var(--wind)}
 
 <!-- ======================= PAGE RÉGLAGES ======================= -->
 <section class="view" id="vSet">
+  <div class="sec" id="offnote" style="margin-top:12px">Connecte le ventilo pour voir et modifier ses réglages.</div>
+  <div class="need">
+  <h2>Profil</h2>
+  <div class="sec">
+    <div class="chips" id="chips"></div>
+    <div class="prow">
+      <div><label for="pname">Nom du profil sélectionné</label><input class="txt" id="pname" maxlength="12" autocomplete="off"></div>
+      <button class="ghost" id="pdel">Supprimer</button>
+    </div>
+    <p id="savest">Les réglages ci-dessous sont ceux de ce profil. Ils s'enregistrent tout seuls dans le ventilo.</p>
+  </div>
   <h2>Capteurs</h2>
   <div class="sec">
     <div class="row">
-      <div class="grow"><h3><svg style="color:var(--hr)"><use href="#i-heart"/></svg>Ceinture cardio <span class="dot" id="sd0"></span></h3><div class="addr" id="n0">Aucune</div></div>
+      <div class="grow"><h3><svg style="color:var(--hr)"><use href="#i-heart"/></svg>Ceinture de <span id="pn2">—</span> <span class="dot" id="sd0"></span></h3><div class="addr" id="n0">Aucune</div></div>
       <div class="acts"><button data-scan="0">Rechercher</button><button class="ghost" data-forget="0" aria-label="Oublier la ceinture">Oublier</button></div>
     </div>
     <div class="list" id="l0"></div>
   </div>
   <div class="sec">
     <div class="row">
-      <div class="grow"><h3><svg style="color:var(--pw)"><use href="#i-bolt"/></svg>Home trainer <span class="dot" id="sd1"></span></h3><div class="addr" id="n1">Aucun</div></div>
+      <div class="grow"><h3><svg style="color:var(--pw)"><use href="#i-bolt"/></svg>Home trainer (commun) <span class="dot" id="sd1"></span></h3><div class="addr" id="n1">Aucun</div></div>
       <div class="acts"><button data-scan="1">Rechercher</button><button class="ghost" data-forget="1" aria-label="Oublier le home trainer">Oublier</button></div>
     </div>
     <div class="list" id="l1"></div>
@@ -238,7 +271,7 @@ nav a.sel{color:var(--wind)}
       <div><label for="pHi">100 % à (W)</label><div class="num"><button data-step="pHi:-10">−</button><input type="number" id="pHi" inputmode="numeric"><button data-step="pHi:10">+</button></div></div>
     </div>
     <div class="ftp">
-      <div><label for="ftp">Ta FTP (W)</label><div class="num"><input type="number" id="ftp" inputmode="numeric" placeholder="230"></div></div>
+      <div><label for="ftp">Ta FTP (W)</label><div class="num"><input type="number" id="ftp" inputmode="numeric" placeholder="ex. 230"></div></div>
       <button id="fromftp">55 → 105 % FTP</button>
     </div>
     <div class="grid2">
@@ -253,11 +286,11 @@ nav a.sel{color:var(--wind)}
     </div>
   </div>
 
-  <h2>Moteur</h2>
+  <h2>Moteur (commun)</h2>
   <div class="sec">
     <div class="row"><div class="grow"><h3>Minimum moteur</h3></div><div class="mval"><span id="mv">--</span> %</div></div>
     <input type="range" id="mn" min="0" max="80" value="35" aria-label="Minimum moteur" style="--c:var(--wind)">
-    <p>En manuel, mets la vitesse sur 1 %, puis monte ce réglage jusqu'à ce que le ventilo tourne franchement sans ronfler. Envoyé au relâchement.</p>
+    <p>En manuel, mets la vitesse sur 1 %, puis monte ce réglage jusqu'à ce que le ventilo tourne franchement sans ronfler. Enregistré au relâchement.</p>
   </div>
 
   <h2>Boîtier</h2>
@@ -265,10 +298,16 @@ nav a.sel{color:var(--wind)}
     <div class="row"><div class="grow"><h3><svg><use href="#i-plug"/></svg><span id="devName">Non connecté</span></h3><p id="devInfo">—</p></div>
     <button class="danger" id="disc">Déconnecter</button></div>
   </div>
+  </div>
 </section>
 
-<div class="savebar" id="savebar"><button id="savecfg">Enregistrer les réglages</button></div>
 <div id="toast" role="status"></div>
+<div class="sheet" id="sheet" hidden><div class="sbox">
+  <h3>Qui roule ?</h3>
+  <div class="plist" id="plist"></div>
+  <p class="hint">Avec ta ceinture sur toi, ton profil se choisit tout seul au bout de quelques secondes.</p>
+  <button class="ghost" id="sclose" style="width:100%;margin-top:12px">Fermer</button>
+</div></div>
 </main>
 
 <nav><div>
@@ -283,7 +322,7 @@ const U=n=>`8f1d000${n}-7c3b-4e5a-9a2b-5f6e7a8b9c0d`;
 const $=id=>document.getElementById(id);
 const sl=$('sl'),mn=$('mn'),arc=$('arc');
 let dev=null,chState=null,chCmd=null,chCfg=null,chScan=null;
-let st=null,lastDv=null,cfg=null,drag=false,mdrag=false,wantConn=false,scanSlot=-1,cfgDirty=false;
+let st=null,lastDv=null,cfg=null,profs=[],chProf=null,drag=false,mdrag=false,wantConn=false,scanSlot=-1,cfgDirty=false,saveT=null,reading=false;
 const found=[{},{}];
 const CFG_KEYS=['hrLo','hrHi','pLo','pHi','lowPct','avgSec'];
 const LIM={hrLo:[40,220],hrHi:[45,230],pLo:[0,1500],pHi:[10,2000],lowPct:[0,100],avgSec:[1,30]};
@@ -314,7 +353,7 @@ const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 function route(){const set=location.hash==='#reglages';
   $('vMain').classList.toggle('show',!set);$('vSet').classList.toggle('show',set);
   $('tabMain').classList.toggle('sel',!set);$('tabSet').classList.toggle('sel',set);
-  $('savebar').classList.toggle('show',set&&cfgDirty);window.scrollTo(0,0)}
+  window.scrollTo(0,0)}
 addEventListener('hashchange',route);
 
 /* ---------- file GATT ---------- */
@@ -332,6 +371,7 @@ function setConn(state){
   b.querySelector('.dot').className='dot '+(on?'ok':state==='wait'?'wait':'');
   $('ctxt').textContent=on?'Connecté':state==='wait'?'Connexion…':'Connecter';
   $('cbig').hidden=on||state==='wait';
+  $('who').hidden=!on;$('vSet').classList.toggle('dis',!on);
   $('bigv').hidden=!on;
   if(!on){setGauge(0,0);setFan(0)}
 }
@@ -343,6 +383,7 @@ async function connect(){
     const srv=await dev.gatt.connect(),svc=await srv.getPrimaryService(SVC);
     chState=await svc.getCharacteristic(U(2));chCmd=await svc.getCharacteristic(U(3));
     chCfg=await svc.getCharacteristic(U(4));chScan=await svc.getCharacteristic(U(5));
+    chProf=await svc.getCharacteristic(U(6));
     chState.addEventListener('characteristicvaluechanged',e=>showState(e.target.value));
     chScan.addEventListener('characteristicvaluechanged',e=>onScan(e.target.value));
     await chState.startNotifications();await chScan.startNotifications();
@@ -361,7 +402,7 @@ async function connect(){
     if(wantConn)setTimeout(connect,2500);
   }
 }
-function onDisc(){chState=chCmd=chCfg=chScan=null;setConn(wantConn?'wait':'off');$('lbl').textContent=wantConn?'Connexion perdue, reconnexion…':'Déconnecté';if(wantConn)setTimeout(connect,1500)}
+function onDisc(){chState=chCmd=chCfg=chScan=chProf=null;setConn(wantConn?'wait':'off');$('lbl').textContent=wantConn?'Connexion perdue, reconnexion…':'Déconnecté';if(wantConn)setTimeout(connect,1500)}
 $('cbtn').onclick=$('cbig').onclick=()=>{if(dev&&dev.gatt.connected)location.hash='#reglages';else connect()};
 $('disc').onclick=()=>{if(dev&&dev.gatt.connected){wantConn=false;dev.gatt.disconnect()}};
 
@@ -372,7 +413,10 @@ function showState(dv){
     hr:dv.getUint8(6),pi:dv.getUint16(7,true),pa:dv.getUint16(9,true),min:dv.getUint8(11)};
   s.zc=!!(s.f&1);s.kick=!!(s.f&2);s.c0=!!(s.f&4);s.c1=!!(s.f&8);s.scan=!!(s.f&16);s.f0=!!(s.f&32);s.f1=!!(s.f&64);
   s.has0=!!(s.g&1);s.has1=!!(s.g&2);s.ftms=!!(s.g&4);
+  s.act=dv.byteLength>12?dv.getUint8(12):0;s.hrp=dv.byteLength>13?dv.getUint8(13):255;
   st=s;
+  if(cfg&&cfg.act!==s.act&&!reading)readCfg();
+  $('whoTag').textContent=(s.f0&&s.hrp===s.act)?'ceinture':'';
   $('v').textContent=s.ui;setGauge(s.ui,s.mode);setFan(s.out);
   document.querySelectorAll('#modes button').forEach(b=>b.classList.toggle('sel',+b.dataset.m===s.mode));
   $('pManual').hidden=s.mode!==0;$('pAuto').hidden=s.mode===0;
@@ -403,31 +447,90 @@ function showState(dv){
   if(!mdrag){mn.value=s.min;mn.style.setProperty('--p',s.min/80*100+'%');$('mv').textContent=s.min}
 }
 
-/* ---------- réglages (23 octets lus, 9 écrits) ---------- */
+/* ---------- réglages du profil actif (36 octets lus, 10 écrits) + liste des profils ---------- */
+const dec=new TextDecoder();
+const cstr=(dv,o,n)=>dec.decode(new Uint8Array(dv.buffer.slice(dv.byteOffset+o,dv.byteOffset+o+n))).replace(/\0.*$/s,'');
 async function readCfg(){
+  if(!chCfg)return;reading=true;
+  try{
   const dv=await gatt(()=>chCfg.readValue());
+  const prevAct=cfg?cfg.act:-1;
   cfg={hrLo:dv.getUint8(1),hrHi:dv.getUint8(2),pLo:dv.getUint16(3,true),pHi:dv.getUint16(5,true),lowPct:dv.getUint8(7),avgSec:dv.getUint8(8),
-    s:[{t:dv.getUint8(9),a:new Uint8Array(dv.buffer.slice(dv.byteOffset+10,dv.byteOffset+16))},{t:dv.getUint8(16),a:new Uint8Array(dv.buffer.slice(dv.byteOffset+17,dv.byteOffset+23))}]};
+    s:[{t:dv.getUint8(9),a:new Uint8Array(dv.buffer.slice(dv.byteOffset+10,dv.byteOffset+16))},{t:dv.getUint8(16),a:new Uint8Array(dv.buffer.slice(dv.byteOffset+17,dv.byteOffset+23))}],
+    act:dv.byteLength>23?dv.getUint8(23):0,name:dv.byteLength>=36?cstr(dv,24,12):'Profil 1'};
+  if(prevAct!==cfg.act){cfgDirty=false;clearTimeout(saveT)}
+  if(chProf){const pv=await gatt(()=>chProf.readValue());profs=[];
+    for(let i=0;i<4;i++){const nm=cstr(pv,2+i*13,12);profs.push({i,name:nm,used:!!nm,strap:!!pv.getUint8(1+i*13)})}}
+  else profs=[{i:0,name:cfg.name,used:true,strap:cfg.s[0].t!==255}];
+  renderProfiles();
   if(!cfgDirty)for(const k of CFG_KEYS)$(k).value=cfg[k];
   for(const i of [0,1]){const x=cfg.s[i];
     if(x.t===255)$('n'+i).textContent=i?'Aucun home trainer associé':'Aucune ceinture associée';
     else{const a=addrStr(x.a);$('n'+i).textContent=(names[a]?names[a]+' · ':'')+a}}
   if(lastDv)showState(lastDv);
+  }finally{reading=false}
 }
-function markDirty(){cfgDirty=true;route()}
-CFG_KEYS.forEach(k=>$(k).addEventListener('input',markDirty));
+function setSaved(t){$('savest').textContent=t}
+function markDirty(){cfgDirty=true;setSaved('Enregistrement…');clearTimeout(saveT);saveT=setTimeout(saveCfg,900)}
+CFG_KEYS.forEach(k=>$(k).addEventListener('change',markDirty));
 document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>{const[k,d]=b.dataset.step.split(':');const e=$(k);
   e.value=clamp((+e.value||0)+ +d,LIM[k][0],LIM[k][1]);markDirty()});
 $('fromftp').onclick=()=>{const f=+$('ftp').value;if(!(f>=50)){toast('Entre ta FTP');return}
   $('pLo').value=Math.round(f*.55);$('pHi').value=Math.round(f*1.05);markDirty()};
-$('savecfg').onclick=async()=>{
-  if(!chCfg){toast('Ventilo non connecté');return}
+async function saveCfg(){
+  if(!chCfg||!cfg){setSaved('Ventilo non connecté : réglage non enregistré');return}
   const n=k=>clamp(Math.round(+$(k).value||0),LIM[k][0],LIM[k][1]);
   const hrLo=n('hrLo'),hrHi=Math.max(n('hrHi'),hrLo+5),pLo=n('pLo'),pHi=Math.max(n('pHi'),pLo+10);
-  const b=[1,hrLo,hrHi,pLo&255,pLo>>8,pHi&255,pHi>>8,n('lowPct'),n('avgSec')];
-  try{await gatt(()=>chCfg.writeValueWithResponse(new Uint8Array(b)));cfgDirty=false;await readCfg();route();toast('Réglages enregistrés dans le ventilo')}
-  catch(e){toast('Échec de l\'envoi')}
+  const b=[2,hrLo,hrHi,pLo&255,pLo>>8,pHi&255,pHi>>8,n('lowPct'),n('avgSec'),cfg.act];
+  try{await gatt(()=>chCfg.writeValueWithResponse(new Uint8Array(b)));cfgDirty=false;await readCfg();setSaved('✓ Enregistré dans le ventilo pour '+cfg.name)}
+  catch(e){setSaved('Échec de l\'envoi, réessaie')}
+}
+
+/* ---------- profils ---------- */
+function renderProfiles(){
+  const a=cfg?cfg.act:0,used=profs.filter(p=>p.used);
+  $('whoName').textContent=cfg?cfg.name:'—';$('pn2').textContent=cfg?cfg.name:'—';
+  if(document.activeElement!==$('pname'))$('pname').value=cfg?cfg.name:'';
+  $('pdel').disabled=used.length<2;
+  const ch=$('chips');ch.textContent='';
+  for(const p of used){const b=document.createElement('button');b.textContent=p.name;b.classList.toggle('sel',p.i===a);b.onclick=()=>pickProfile(p.i);ch.appendChild(b)}
+  if(used.length<4){const b=document.createElement('button');b.className='add';b.textContent='+ Ajouter';b.onclick=addProfile;ch.appendChild(b)}
+  const pl=$('plist');pl.textContent='';
+  for(const p of used){const b=document.createElement('button');b.classList.toggle('sel',p.i===a);
+    const ic=document.createElementNS('http://www.w3.org/2000/svg','svg');ic.innerHTML='<use href="#i-user"/>';ic.setAttribute('width','20');ic.setAttribute('height','20');
+    const nm=document.createElement('span');nm.textContent=p.name;
+    const sm=document.createElement('small');sm.textContent=p.strap?'ceinture associée':'sans ceinture';
+    b.append(ic,nm,sm);b.onclick=()=>{$('sheet').hidden=true;pickProfile(p.i)};pl.appendChild(b)}
+}
+async function pickProfile(i){
+  if(!chCmd||!cfg||i===cfg.act)return;
+  if(cfgDirty){clearTimeout(saveT);await saveCfg()}
+  await send([0x30,i]);
+  setTimeout(async()=>{await readCfg();
+    if(cfg&&cfg.act!==i&&st&&st.hrp!==255){const o=profs[st.hrp];toast(`La ceinture de ${o?o.name:'quelqu\'un'} est portée : son profil reste actif`)}},700);
+}
+async function addProfile(){
+  const free=[0,1,2,3].find(i=>!profs[i]||!profs[i].used);if(free===undefined)return;
+  await pickProfile(free);
+  setTimeout(()=>{location.hash='#reglages';const e=$('pname');e.focus();e.select();toast('Donne un nom au profil')},900);
+}
+$('pname').addEventListener('change',async()=>{
+  if(!chCmd||!cfg)return;
+  let bytes=new TextEncoder().encode($('pname').value.trim()||'?');
+  while(bytes.length>12){const t=[...dec.decode(bytes)];t.pop();bytes=new TextEncoder().encode(t.join(''))}
+  await send([0x31,cfg.act,...bytes]);await readCfg();setSaved('✓ Nom enregistré');
+});
+let delArm=false,delT=null;
+$('pdel').onclick=async()=>{
+  if(!cfg)return;
+  if(!delArm){delArm=true;$('pdel').textContent='Confirmer ?';$('pdel').classList.add('danger');
+    delT=setTimeout(()=>{delArm=false;$('pdel').textContent='Supprimer';$('pdel').classList.remove('danger')},3000);return}
+  clearTimeout(delT);delArm=false;$('pdel').textContent='Supprimer';$('pdel').classList.remove('danger');
+  await send([0x32,cfg.act]);setTimeout(readCfg,400);toast('Profil supprimé');
 };
+$('who').onclick=()=>{renderProfiles();$('sheet').hidden=false};
+$('sclose').onclick=()=>{$('sheet').hidden=true};
+$('sheet').addEventListener('click',e=>{if(e.target.id==='sheet')$('sheet').hidden=true});
 
 /* ---------- recherche de capteurs ---------- */
 const KIND=['','cardio','puissance','cardio + puissance','FTMS','cardio + FTMS','puissance + FTMS','cardio + puissance + FTMS'];

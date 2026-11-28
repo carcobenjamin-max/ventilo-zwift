@@ -35,6 +35,15 @@ Ce boîtier règle la vitesse de ton ventilateur depuis ton téléphone. Il peut
 - Toucher le curseur repasse en manuel.
 - Une fois réglé, **le téléphone n'est plus nécessaire** : le boîtier se connecte tout seul à ta ceinture ou à ton home trainer.
 
+## Profils (plusieurs utilisateurs)
+
+- Chaque personne a son **profil** : son nom, **sa ceinture** et ses plages FC / puissance. Le home trainer et le minimum moteur sont communs.
+- **Créer un profil** : Réglages → Profil → **+ Ajouter**, donne-lui un nom, puis associe ta ceinture dans « Capteurs ».
+- **Choix automatique** : quand tu portes ta ceinture, le ventilo la reconnaît et passe sur ton profil tout seul (quelques secondes).
+- **Choix manuel** (sans ceinture, mode Puissance) : touche le nom affiché au-dessus de la jauge.
+- La ceinture portée l'emporte : tant qu'elle envoie des mesures, on ne peut pas passer sur un autre profil.
+- Les réglages s'enregistrent **tout seuls** dans le ventilo (« ✓ Enregistré » s'affiche).
+
 ## Associer ta ceinture ou ton home trainer
 
 1. Section **Capteurs** → **Rechercher** sur la bonne ligne.
@@ -45,12 +54,12 @@ Si rien n'apparaît : ferme Zwift (ou l'appli qui utilise le capteur), associe-l
 
 ## Réglages
 
-Dans **Réglages → Plages de régulation** :
+Dans **Réglages** (pour le profil sélectionné) :
 
 - **FC bas de plage / à 100 %** : par exemple ta FC d'endurance tranquille et ta FC de seuil.
 - **Puissance** : entre ta FTP et appuie sur « 55 → 105 % FTP ».
 - **Vitesse en bas de plage** : 0 = ventilo arrêté quand tu es en dessous.
-- Appuie sur **Enregistrer dans le ventilo**. Les réglages restent dans le boîtier, même débranché.
+- Pas de bouton : les réglages s'enregistrent tout seuls dans le profil sélectionné et restent dans le boîtier, même débranché.
 
 ## Voyants dans l'appli
 
